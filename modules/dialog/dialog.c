@@ -635,7 +635,7 @@ int load_dlg( struct dlg_binds *dlgb )
 	dlgb->unref_dlg = unref_dlg_destroy_safe;
 
 	dlgb->get_rr_param = get_rr_param;
-
+	LM_ERR("Royeeeee111111\n");
 	return 1;
 }
 
