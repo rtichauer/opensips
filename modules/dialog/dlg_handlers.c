@@ -1028,11 +1028,11 @@ void update_dialog_route (struct sip_msg* req, struct dlg_cell *dlg, str *callid
 	LM_DBG("Royee 1 leg.contact=%.*s\n", leg.contact.len, leg.contact.s);
 
 	int is_req = (req->first_line.type==SIP_REQUEST)?1:0;
-	int skip_recs = 0;
+	unsigned int skip_recs = 0;
 	str contact;
 	str rr_set;
 	get_routing_info(req, is_req, &skip_recs, &contact, &rr_set);
-	dlg_update_leg_info(&leg, &dlg, ftag, &rr_set, &contact, req->cseq, req->rcv.bind_address, NULL, NULL);
+	dlg_update_leg_info(&leg, dlg, ftag, &rr_set, &contact, &(req->cseq->body), req->rcv.bind_address, NULL, NULL);
 }
 
 
