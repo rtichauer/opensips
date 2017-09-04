@@ -1005,7 +1005,14 @@ void update_dialog_route (struct sip_msg* req, struct dlg_cell *dlg, str *callid
 	LM_ERR("Royee 0\n");
 	unsigned int i;
 	struct dlg_leg leg;
-	LM_DBG("Royee 1 req->contact=%.*s\n", req->contact->body.len, req->contact->body.s);
+	if (req != NULL){
+		LM_ERR("Royee 00\n");
+		if (req->contact != NULL){
+			LM_ERR("Royee 000\n");
+			LM_DBG("Royee 1 req->contact=%d\n", req->contact->body.len);
+		}
+	}
+
 //	if (dir == DLG_DIR_DOWNSTREAM) {
 //		// message is from caller
 //		LM_DBG("Royee 2\n");
@@ -1153,18 +1160,6 @@ void dlg_onroute(struct sip_msg* req, str *route_params, void *param)
 		}
 	}
 
-	update_dialog_route(req, dlg, &callid, &ftag, &ttag, dir);
-	/* run state machine */
-	switch ( req->first_line.u.request.method_value ) {
-		case METHOD_PRACK:
-			event = DLG_EVENT_REQPRACK; break;
-		case METHOD_ACK:
-			event = DLG_EVENT_REQACK; break;
-		case METHOD_BYE:
-			event = DLG_EVENT_REQBYE; break;
-		default:
-			event = DLG_EVENT_REQ;
-	}
 
 	LM_WARN("Royee tight matching failed for %.*s with "
 					"callid='%.*s'/%d,"
@@ -1184,6 +1179,20 @@ void dlg_onroute(struct sip_msg* req, str *route_params, void *param)
 			dlg->legs[callee_idx(dlg)].tag.len,
 			ZSW(dlg->legs[callee_idx(dlg)].tag.s),
 			dlg->legs[callee_idx(dlg)].tag.len);
+
+
+	update_dialog_route(req, dlg, &callid, &ftag, &ttag, dir);
+	/* run state machine */
+	switch ( req->first_line.u.request.method_value ) {
+		case METHOD_PRACK:
+			event = DLG_EVENT_REQPRACK; break;
+		case METHOD_ACK:
+			event = DLG_EVENT_REQACK; break;
+		case METHOD_BYE:
+			event = DLG_EVENT_REQBYE; break;
+		default:
+			event = DLG_EVENT_REQ;
+	}
 
 
 	next_state_dlg( dlg, event, dir, &old_state, &new_state, &unref, dst_leg, 0);
