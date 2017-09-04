@@ -377,9 +377,11 @@ static inline void push_reply_in_dialog(struct sip_msg *rpl, struct cell* t,
 
 
 routing_info:
+	LM_DBG("Royee - right before if\n");
 	/* update dlg info only if 2xx reply and if not already done so */
 	if (rpl->REPLY_STATUS>=200 && rpl->REPLY_STATUS<300 &&
 	dlg->legs_no[DLG_LEG_200OK] != leg) {
+		LM_DBG("Royee - inside if\n");
 		/* set this branch as primary */
 		if (!dlg->legs_no[DLG_LEG_200OK])
 			dlg->legs_no[DLG_LEG_200OK] = leg;
@@ -1129,6 +1131,26 @@ void dlg_onroute(struct sip_msg* req, str *route_params, void *param)
 		default:
 			event = DLG_EVENT_REQ;
 	}
+
+	LM_WARN("Royee tight matching failed for %.*s with "
+					"callid='%.*s'/%d,"
+					" ftag='%.*s'/%d, ttag='%.*s'/%d and direction=%d\n",
+			req->first_line.u.request.method.len,
+			req->first_line.u.request.method.s,
+			callid.len, callid.s, callid.len,
+			ftag.len, ftag.s, ftag.len,
+			ttag.len, ttag.s, ttag.len, dir);
+	LM_WARN("Royee dialog identification elements are "
+					"callid='%.*s'/%d, "
+					"caller tag='%.*s'/%d, callee tag='%.*s'/%d\n",
+			dlg->callid.len, dlg->callid.s, dlg->callid.len,
+			dlg->legs[DLG_CALLER_LEG].tag.len,
+			dlg->legs[DLG_CALLER_LEG].tag.s,
+			dlg->legs[DLG_CALLER_LEG].tag.len,
+			dlg->legs[callee_idx(dlg)].tag.len,
+			ZSW(dlg->legs[callee_idx(dlg)].tag.s),
+			dlg->legs[callee_idx(dlg)].tag.len);
+
 
 	next_state_dlg( dlg, event, dir, &old_state, &new_state, &unref, dst_leg, 0);
 
