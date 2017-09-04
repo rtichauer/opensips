@@ -1018,7 +1018,7 @@ void update_dialog_route (struct sip_msg* req, struct dlg_cell *dlg, str *callid
 				if (dlg->legs[i].tag.len == ftag->len &&
 					strncmp(dlg->legs[i].tag.s, ftag->s, ftag->len) == 0) {
 					leg = dlg->legs[i];
-					LM_DBG("Royee 4 %\n");
+					LM_DBG("Royee 4\n");
 					break;
 				}
 			}
