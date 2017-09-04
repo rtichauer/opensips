@@ -377,11 +377,9 @@ static inline void push_reply_in_dialog(struct sip_msg *rpl, struct cell* t,
 
 
 routing_info:
-	LM_DBG("Royee - right before if\n");
 	/* update dlg info only if 2xx reply and if not already done so */
 	if (rpl->REPLY_STATUS>=200 && rpl->REPLY_STATUS<300 &&
 	dlg->legs_no[DLG_LEG_200OK] != leg) {
-		LM_DBG("Royee - inside if\n");
 		/* set this branch as primary */
 		if (!dlg->legs_no[DLG_LEG_200OK])
 			dlg->legs_no[DLG_LEG_200OK] = leg;
@@ -1002,6 +1000,38 @@ static inline void log_bogus_dst_leg(struct dlg_cell *dlg)
 			dlg_leg_print_info( dlg, callee_idx(dlg), tag),dlg->legs_no[DLG_LEGS_USED]);
 }
 
+void update_dialog_route (struct sip_msg* req, struct dlg_cell *dlg, str *callid,
+						  str *ftag, str *ttag, unsigned int dir) {
+	unsigned int i;
+	struct dlg_leg leg;
+	if (dir == DLG_DIR_DOWNSTREAM) {
+		// message is from caller
+		leg = dlg->legs[DLG_CALLER_LEG];
+
+	} else {
+		/* check the dialog to tag - interate through all the stored to-tags */
+		if (dlg->legs_no[DLG_LEGS_USED] > DLG_FIRST_CALLEE_LEG) {
+			for (i = DLG_FIRST_CALLEE_LEG; i < dlg->legs_no[DLG_LEGS_USED]; i++) {
+				if (dlg->legs[i].tag.len == ftag->len &&
+					strncmp(dlg->legs[i].tag.s, ftag->s, ftag->len) == 0) {
+					leg = dlg->legs[i];
+					break;
+				}
+			}
+		}
+	}
+
+	int is_req = (req->first_line.type==SIP_REQUEST)?1:0;
+	int skip_recs = 0;
+	str contact;
+	str rr_set;
+	get_routing_info(req, is_req, &skip_recs, &contact, &rr_set);
+	dlg_update_leg_info(&leg, &dlg, ftag, &rr_set, &contact, req->cseq, req->rcv.bind_address, NULL, NULL);
+}
+
+
+
+
 void dlg_onroute(struct sip_msg* req, str *route_params, void *param)
 {
 	struct dlg_cell *dlg;
@@ -1022,23 +1052,19 @@ void dlg_onroute(struct sip_msg* req, str *route_params, void *param)
 	str *msg_cseq;
 	char *final_cseq;
 
-	LM_WARN("Royee 1");
 	/* as this callback is triggered from loose_route, which can be
 	   accidentaly called more than once from script, we need to be sure
 	   we do this only once !*/
 	if (ctx_dialog_get())
 		return;
-	LM_WARN("Royee 2");
 	/* skip initial requests - they may end up here because of the
 	 * preloaded route */
 	if ( (!req->to && parse_headers(req, HDR_TO_F,0)<0) || !req->to ) {
 		LM_ERR("bad request or missing TO hdr :-/\n");
 		return;
 	}
-	LM_WARN("Royee 3");
 	if ( get_to(req)->tag_value.len==0 )
 		return;
-	LM_WARN("Royee 4");
 	dlg = 0;
 	dir = DLG_DIR_NONE;
 	dst_leg = -1;
@@ -1049,86 +1075,78 @@ void dlg_onroute(struct sip_msg* req, str *route_params, void *param)
 	 * DID from the R-URI */
 	if (param)
 		val = *((str *)param);
-	LM_WARN("Royee 5");
 	if ( seq_match_mode!=SEQ_MATCH_NO_ID ) {
-		if( val.s == NULL && d_rrb.get_route_param( req, &rr_param, &val)!=0) {
-			LM_WARN("Royee 6");
-			LM_DBG("Route param '%.*s' not found\n", rr_param.len,rr_param.s);
-			if (seq_match_mode==SEQ_MATCH_STRICT_ID )
+		if (val.s == NULL && d_rrb.get_route_param(req, &rr_param, &val) != 0) {
+			LM_DBG("Route param '%.*s' not found\n", rr_param.len, rr_param.s);
+			if (seq_match_mode == SEQ_MATCH_STRICT_ID)
 				return;
 		} else {
-			LM_WARN("Royee 7");
-			LM_DBG("route param is '%.*s' (len=%d)\n",val.len,val.s,val.len);
+			LM_DBG("route param is '%.*s' (len=%d)\n", val.len, val.s, val.len);
 
-			if ( parse_dlg_rr_param( val.s, val.s+val.len, &h_entry, &h_id)<0 )
+			if (parse_dlg_rr_param(val.s, val.s + val.len, &h_entry, &h_id) < 0)
 				return;
 
-			dlg = lookup_dlg( h_entry, h_id);
-			if (dlg==0) {
+			dlg = lookup_dlg(h_entry, h_id);
+			if (dlg == 0) {
 				LM_DBG("unable to find dialog for %.*s "
-					"with route param '%.*s'\n",
-					req->first_line.u.request.method.len,
-					req->first_line.u.request.method.s,
-					val.len,val.s);
+							   "with route param '%.*s'\n",
+					   req->first_line.u.request.method.len,
+					   req->first_line.u.request.method.s,
+					   val.len, val.s);
 			} else {
-				LM_WARN("Royee 8");
 				/* lookup_dlg has incremented the ref count by 1 */
-				if (pre_match_parse( req, &callid, &ftag, &ttag)<0) {
+				if (pre_match_parse(req, &callid, &ftag, &ttag) < 0) {
 					unref_dlg(dlg, 1);
 					return;
 				}
-				LM_WARN("Royee 9");
-				if (match_dialog(dlg,&callid,&ftag,&ttag,&dir, &dst_leg )==0){
+				if (match_dialog(dlg, &callid, &ftag, &ttag, &dir, &dst_leg) == 0) {
 					if (!accept_replicated_dlg) {
 						/* not an error when accepting replicating dialogs -
 						   we might have generated a different h_id when
 						   accepting the replicated dialog */
 						LM_WARN("tight matching failed for %.*s with "
-							"callid='%.*s'/%d,"
-							" ftag='%.*s'/%d, ttag='%.*s'/%d and direction=%d\n",
-							req->first_line.u.request.method.len,
-							req->first_line.u.request.method.s,
-							callid.len, callid.s, callid.len,
-							ftag.len, ftag.s, ftag.len,
-							ttag.len, ttag.s, ttag.len, dir);
+										"callid='%.*s'/%d,"
+										" ftag='%.*s'/%d, ttag='%.*s'/%d and direction=%d\n",
+								req->first_line.u.request.method.len,
+								req->first_line.u.request.method.s,
+								callid.len, callid.s, callid.len,
+								ftag.len, ftag.s, ftag.len,
+								ttag.len, ttag.s, ttag.len, dir);
 						LM_WARN("dialog identification elements are "
-							"callid='%.*s'/%d, "
-							"caller tag='%.*s'/%d, callee tag='%.*s'/%d\n",
-							dlg->callid.len, dlg->callid.s, dlg->callid.len,
-							dlg->legs[DLG_CALLER_LEG].tag.len,
-							dlg->legs[DLG_CALLER_LEG].tag.s,
-							dlg->legs[DLG_CALLER_LEG].tag.len,
-							dlg->legs[callee_idx(dlg)].tag.len,
-							ZSW(dlg->legs[callee_idx(dlg)].tag.s),
-							dlg->legs[callee_idx(dlg)].tag.len);
+										"callid='%.*s'/%d, "
+										"caller tag='%.*s'/%d, callee tag='%.*s'/%d\n",
+								dlg->callid.len, dlg->callid.s, dlg->callid.len,
+								dlg->legs[DLG_CALLER_LEG].tag.len,
+								dlg->legs[DLG_CALLER_LEG].tag.s,
+								dlg->legs[DLG_CALLER_LEG].tag.len,
+								dlg->legs[callee_idx(dlg)].tag.len,
+								ZSW(dlg->legs[callee_idx(dlg)].tag.s),
+								dlg->legs[callee_idx(dlg)].tag.len);
 					}
 					unref_dlg(dlg, 1);
 					/* potentially fall through to SIP-wise dialog matching,
 					   depending on seq_match_mode */
 					dlg = NULL;
 				}
-				LM_WARN("Royee 10");
 			}
-			if (dlg==NULL && seq_match_mode==SEQ_MATCH_STRICT_ID )
+			if (dlg == NULL && seq_match_mode == SEQ_MATCH_STRICT_ID)
 				return;
 		}
 	}
-	LM_WARN("Royee 11");
 	if (dlg==0) {
-		LM_WARN("Royee 12");
 		if (pre_match_parse( req, &callid, &ftag, &ttag)<0)
 			return;
 		/* TODO - try to use the RR dir detection to speed up here the
 		 * search -bogdan */
 		dlg = get_dlg(&callid, &ftag, &ttag, &dir, &dst_leg);
-		LM_WARN("Royee 13");
 		if (!dlg){
 			LM_DBG("Callid '%.*s' not found\n",
 				req->callid->body.len, req->callid->body.s);
 			return;
 		}
 	}
-	LM_WARN("Royee 14");
+
+	update_dialog_route(req, dlg, &callid, &ftag, &ttag, dir);
 	/* run state machine */
 	switch ( req->first_line.u.request.method_value ) {
 		case METHOD_PRACK:

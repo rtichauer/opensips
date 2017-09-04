@@ -300,6 +300,12 @@ int dlg_add_leg_info(struct dlg_cell *dlg, str* tag, str *rr,
 		str *contact,str *cseq, struct socket_info *sock,
 		str *mangled_from,str *mangled_to);
 
+int dlg_update_leg_info(struct dlg_leg *leg, struct dlg_cell *dlg, str* tag, str *rr,
+					 str *contact,str *cseq, struct socket_info *sock,
+					 str *mangled_from,str *mangled_to);
+
+
+
 int dlg_update_cseq(struct dlg_cell *dlg, unsigned int leg, str *cseq,
 						int field_type);
 

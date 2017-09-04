@@ -326,6 +326,125 @@ struct dlg_cell* build_new_dlg( str *callid, str *from_uri, str *to_uri,
 	return dlg;
 }
 
+int dlg_update_leg_info(struct dlg_leg *leg, struct dlg_cell *dlg, str *tag, str *rr,
+                        str *contact, str *cseq, struct socket_info *sock,
+                        str *mangled_from, str *mangled_to) {
+    rr_t *head = NULL, *rrp;
+
+    if (leg->tag.s) shm_free(leg->tag.s);
+    if (leg->r_cseq.s) shm_free(leg->r_cseq.s);
+
+    leg->tag.s = (char *) shm_malloc(tag->len);
+    leg->r_cseq.s = (char *) shm_malloc(cseq->len);
+    if (leg->tag.s == NULL || leg->r_cseq.s == NULL) {
+        LM_ERR("no more shm mem\n");
+        if (leg->tag.s) shm_free(leg->tag.s);
+        if (leg->r_cseq.s) shm_free(leg->r_cseq.s);
+        return -1;
+    }
+
+    if (dlg->legs_no[DLG_LEGS_USED] == 0) {
+        /* first leg = caller. also store inv cseq */
+        if (leg->inv_cseq.s != NULL) {
+            shm_free(leg->inv_cseq.s);
+        }
+
+        leg->inv_cseq.s = (char *) shm_malloc(cseq->len);
+        if (leg->inv_cseq.s == NULL) {
+            LM_ERR("no more shm mem\n");
+            shm_free(leg->tag.s);
+            shm_free(leg->r_cseq.s);
+            return -1;
+        }
+    }
+
+    if (contact->len) {
+        /* contact */
+        if (leg->contact.s != NULL) {
+            shm_free(leg->contact.s);
+        }
+        leg->contact.s = shm_malloc(rr->len + contact->len);
+        if (leg->contact.s == NULL) {
+            LM_ERR("no more shm mem\n");
+            shm_free(leg->tag.s);
+            shm_free(leg->r_cseq.s);
+            return -1;
+        }
+        leg->contact.len = contact->len;
+        memcpy(leg->contact.s, contact->s, contact->len);
+        /* rr */
+        if (rr->len) {
+            leg->route_set.s = leg->contact.s + contact->len;
+            leg->route_set.len = rr->len;
+            memcpy(leg->route_set.s, rr->s, rr->len);
+
+            if (parse_rr_body(leg->route_set.s, leg->route_set.len, &head) != 0) {
+                LM_ERR("failed parsing route set\n");
+                shm_free(leg->tag.s);
+                shm_free(leg->r_cseq.s);
+                shm_free(leg->contact.s);
+                return -1;
+            }
+            rrp = head;
+            leg->nr_uris = 0;
+            while (rrp) {
+                leg->route_uris[leg->nr_uris++] = rrp->nameaddr.uri;
+                rrp = rrp->next;
+            }
+            free_rr(&head);
+        }
+    }
+
+    /* save mangled from URI, if any */
+    if (mangled_from && mangled_from->s && mangled_from->len) {
+
+        if (leg->from_uri.s != NULL) {
+            shm_free(leg->from_uri.s);
+        }
+        leg->from_uri.s = shm_malloc(mangled_from->len);
+        if (!leg->from_uri.s) {
+            LM_ERR("no more shm\n");
+            shm_free(leg->tag.s);
+            shm_free(leg->r_cseq.s);
+            if (leg->contact.s)
+                shm_free(leg->contact.s);
+            return -1;
+        }
+
+        leg->from_uri.len = mangled_from->len;
+        memcpy(leg->from_uri.s, mangled_from->s, mangled_from->len);
+    }
+
+    if (mangled_to && mangled_to->s && mangled_to->len) {
+        if (leg->to_uri.s != NULL){
+            shm_free(leg->to_uri.s);
+        }
+
+        leg->to_uri.s = shm_malloc(mangled_to->len);
+        if (!leg->to_uri.s) {
+            LM_ERR("no more shm\n");
+            shm_free(leg->tag.s);
+            shm_free(leg->r_cseq.s);
+            if (leg->contact.s)
+                shm_free(leg->contact.s);
+            if (leg->from_uri.s)
+                shm_free(leg->from_uri.s);
+            return -1;
+        }
+
+        leg->to_uri.len = mangled_to->len;
+        memcpy(leg->to_uri.s, mangled_to->s, mangled_to->len);
+    }
+
+    /* tag */
+    leg->tag.len = tag->len;
+    memcpy(leg->tag.s, tag->s, tag->len);
+
+    /* socket */
+    leg->bind_addr = sock;
+
+}
+
 /* first time it will called for a CALLER leg - at that time there will
    be no leg allocated, so automatically CALLER gets the first position, while
    the CALLEE legs will follow into the array in the same order they came */
