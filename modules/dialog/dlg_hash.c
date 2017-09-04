@@ -447,8 +447,10 @@ int dlg_update_leg_info(struct dlg_leg *leg, struct dlg_cell *dlg, str *tag, str
     memcpy(leg->tag.s, tag->s, tag->len);
 
     LM_DBG("Royee 11  leg.contact=%.*s \n",leg->contact.len, leg->contact.s);
-    LM_DBG("Royee 12  leg.address=%.*s, %d \n",leg->bind_addr->address_str.len, leg->bind_addr->address_str.s, leg->bind_addr->port_no);
-    LM_DBG("Royee 12  leg.socket=%.*s, %d \n",sock->address_str.len,sock->address_str.s, sock->port_no);
+    LM_DBG("Royee 12  leg.address=%.*s, %d, %d \n",leg->bind_addr->address_str.len, leg->bind_addr->address_str.s, leg->bind_addr->port_no, &leg->bind_addr);
+    LM_DBG("Royee 12  leg.socket=%.*s, %d, %d \n",sock->address_str.len,sock->address_str.s, sock->port_no, &sock);
+
+
     /* socket */
 //    leg->bind_addr = sock;
     return 0;
