@@ -1004,22 +1004,28 @@ void update_dialog_route (struct sip_msg* req, struct dlg_cell *dlg, str *callid
 						  str *ftag, str *ttag, unsigned int dir) {
 	unsigned int i;
 	struct dlg_leg leg;
+	LM_DBG("Royee 1 req->contact=%.*s\n", req->contact->body.len, req->contact->body.s);
 	if (dir == DLG_DIR_DOWNSTREAM) {
 		// message is from caller
+		LM_DBG("Royee 2\n");
 		leg = dlg->legs[DLG_CALLER_LEG];
 
 	} else {
+		LM_DBG("Royee 3\n");
 		/* check the dialog to tag - interate through all the stored to-tags */
 		if (dlg->legs_no[DLG_LEGS_USED] > DLG_FIRST_CALLEE_LEG) {
 			for (i = DLG_FIRST_CALLEE_LEG; i < dlg->legs_no[DLG_LEGS_USED]; i++) {
 				if (dlg->legs[i].tag.len == ftag->len &&
 					strncmp(dlg->legs[i].tag.s, ftag->s, ftag->len) == 0) {
 					leg = dlg->legs[i];
+					LM_DBG("Royee 4 %\n");
 					break;
 				}
 			}
 		}
 	}
+
+	LM_DBG("Royee 1 leg.contact=%.*s\n", leg.contact.len, leg.contact.s);
 
 	int is_req = (req->first_line.type==SIP_REQUEST)?1:0;
 	int skip_recs = 0;

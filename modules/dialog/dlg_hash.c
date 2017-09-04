@@ -330,18 +330,22 @@ int dlg_update_leg_info(struct dlg_leg *leg, struct dlg_cell *dlg, str *tag, str
                         str *contact, str *cseq, struct socket_info *sock,
                         str *mangled_from, str *mangled_to) {
     rr_t *head = NULL, *rrp;
+    LM_DBG("Royee 5 %\n");
 
     if (leg->tag.s) shm_free(leg->tag.s);
     if (leg->r_cseq.s) shm_free(leg->r_cseq.s);
 
     leg->tag.s = (char *) shm_malloc(tag->len);
     leg->r_cseq.s = (char *) shm_malloc(cseq->len);
+
+    LM_DBG("Royee 6 %\n");
     if (leg->tag.s == NULL || leg->r_cseq.s == NULL) {
         LM_ERR("no more shm mem\n");
         if (leg->tag.s) shm_free(leg->tag.s);
         if (leg->r_cseq.s) shm_free(leg->r_cseq.s);
         return -1;
     }
+    LM_DBG("Royee 7 %\n");
 
     if (dlg->legs_no[DLG_LEGS_USED] == 0) {
         /* first leg = caller. also store inv cseq */
@@ -357,6 +361,7 @@ int dlg_update_leg_info(struct dlg_leg *leg, struct dlg_cell *dlg, str *tag, str
             return -1;
         }
     }
+    LM_DBG("Royee 8 %\n");
 
     if (contact->len) {
         /* contact */
@@ -394,7 +399,7 @@ int dlg_update_leg_info(struct dlg_leg *leg, struct dlg_cell *dlg, str *tag, str
             free_rr(&head);
         }
     }
-
+    LM_DBG("Royee 9 %\n");
     /* save mangled from URI, if any */
     if (mangled_from && mangled_from->s && mangled_from->len) {
 
@@ -414,6 +419,7 @@ int dlg_update_leg_info(struct dlg_leg *leg, struct dlg_cell *dlg, str *tag, str
         leg->from_uri.len = mangled_from->len;
         memcpy(leg->from_uri.s, mangled_from->s, mangled_from->len);
     }
+    LM_DBG("Royee 10 %\n");
 
     if (mangled_to && mangled_to->s && mangled_to->len) {
         if (leg->to_uri.s != NULL){
@@ -439,6 +445,8 @@ int dlg_update_leg_info(struct dlg_leg *leg, struct dlg_cell *dlg, str *tag, str
     /* tag */
     leg->tag.len = tag->len;
     memcpy(leg->tag.s, tag->s, tag->len);
+
+    LM_DBG("Royee 11  leg.contact=%.*s \n",leg->contact.len, leg->contact.s);
 
     /* socket */
     leg->bind_addr = sock;
