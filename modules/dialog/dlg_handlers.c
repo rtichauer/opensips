@@ -1005,7 +1005,7 @@ void update_dialog_route (struct sip_msg* req, struct dlg_cell *dlg, str *callid
 	LM_ERR("Royee 0\n");
 	unsigned int i;
 	struct dlg_leg leg;
-//	LM_DBG("Royee 1 req->contact=%.*s\n", req->contact->body.len, req->contact->body.s);
+	LM_DBG("Royee 1 req->contact=%.*s\n", req->contact->body.len, req->contact->body.s);
 //	if (dir == DLG_DIR_DOWNSTREAM) {
 //		// message is from caller
 //		LM_DBG("Royee 2\n");
