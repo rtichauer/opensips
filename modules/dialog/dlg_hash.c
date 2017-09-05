@@ -363,11 +363,13 @@ int dlg_update_leg_info(struct dlg_leg *leg, struct dlg_cell *dlg, str *tag, str
 //    }
     LM_DBG("Royee 8\n");
 
+    LM_DBG("Royee before  leg.contact=%.*s \n",leg->contact.len, leg->contact.s);
+
     if (contact->len) {
         /* contact */
-//        if (leg->contact.s != NULL) {
-//            shm_free(leg->contact.s);
-//        }
+        if (leg->contact.s != NULL) {
+            shm_free(leg->contact.s);
+        }
         leg->contact.s = shm_malloc(rr->len + contact->len);
         if (leg->contact.s == NULL) {
             LM_ERR("no more shm mem\n");
@@ -443,18 +445,20 @@ int dlg_update_leg_info(struct dlg_leg *leg, struct dlg_cell *dlg, str *tag, str
 //    }
 //
 //    /* tag */
-//    leg->tag.len = tag->len;
-//    memcpy(leg->tag.s, tag->s, tag->len);
+    leg->tag.len = tag->len;
+    memcpy(leg->tag.s, tag->s, tag->len);
 
 
 
-    LM_DBG("Royee 11  leg.contact=%.*s \n",leg->contact.len, leg->contact.s);
+    LM_DBG("Royee after leg.contact=%.*s \n",leg->contact.len, leg->contact.s);
     LM_DBG("Royee 12  leg.address=%.*s, %d, %d \n",leg->bind_addr->address_str.len, leg->bind_addr->address_str.s, leg->bind_addr->port_no, leg->bind_addr);
     LM_DBG("Royee 13  leg.socket=%.*s, %d, %d \n",sock->address_str.len,sock->address_str.s, sock->port_no, sock);
 	LM_DBG("Royee 14  leg.socket=%.*s, %d, %d \n",sock->address_str.len,sock->address_str.s, sock->port_no, sock);
+    LM_DBG("Royee 15  leg.socket=%.*s, \n",sock->adv_address.len,sock->address_str.s);
+    LM_DBG("Royee 16  leg.socket=%.*s, \n",sock->adv_sock_str.len,sock->adv_sock_str.s);
 
     /* socket */
-//    leg->bind_addr = sock;
+    leg->bind_addr = sock;
 
     return 0;
 }
