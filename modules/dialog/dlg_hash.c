@@ -378,26 +378,26 @@ int dlg_update_leg_info(struct dlg_leg *leg, struct dlg_cell *dlg, str *tag, str
         leg->contact.len = contact->len;
         memcpy(leg->contact.s, contact->s, contact->len);
         /* rr */
-//        if (rr->len) {
-//            leg->route_set.s = leg->contact.s + contact->len;
-//            leg->route_set.len = rr->len;
-//            memcpy(leg->route_set.s, rr->s, rr->len);
-//
-//            if (parse_rr_body(leg->route_set.s, leg->route_set.len, &head) != 0) {
-//                LM_ERR("failed parsing route set\n");
-//                shm_free(leg->tag.s);
-//                shm_free(leg->r_cseq.s);
-//                shm_free(leg->contact.s);
-//                return -1;
-//            }
-//            rrp = head;
-//            leg->nr_uris = 0;
-//            while (rrp) {
-//                leg->route_uris[leg->nr_uris++] = rrp->nameaddr.uri;
-//                rrp = rrp->next;
-//            }
-//            free_rr(&head);
-//        }
+        if (rr->len) {
+            leg->route_set.s = leg->contact.s + contact->len;
+            leg->route_set.len = rr->len;
+            memcpy(leg->route_set.s, rr->s, rr->len);
+
+            if (parse_rr_body(leg->route_set.s, leg->route_set.len, &head) != 0) {
+                LM_ERR("failed parsing route set\n");
+                shm_free(leg->tag.s);
+                shm_free(leg->r_cseq.s);
+                shm_free(leg->contact.s);
+                return -1;
+            }
+            rrp = head;
+            leg->nr_uris = 0;
+            while (rrp) {
+                leg->route_uris[leg->nr_uris++] = rrp->nameaddr.uri;
+                rrp = rrp->next;
+            }
+            free_rr(&head);
+        }
     }
     LM_DBG("Royee 9\n");
     /* save mangled from URI, if any */
