@@ -194,7 +194,7 @@ int t_uac(str* method, str* headers, str* body, dlg_t* dialog,
 	if(dialog->obp.s)
 		dialog->hooks.next_hop = &dialog->obp;
 
-	LM_DBG("next_hop=<%.*s>\n",dialog->hooks.next_hop->len,
+	LM_DBG("method=<%.*s> next_hop=<%.*s>\n",method->len, method->s,  dialog->hooks.next_hop->len,
 			dialog->hooks.next_hop->s);
 
 	/* calculate the socket corresponding to next hop */
