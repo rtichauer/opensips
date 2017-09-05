@@ -224,8 +224,8 @@ int t_uac(str* method, str* headers, str* body, dlg_t* dialog,
 			goto error2;
 		}
 	}
-	LM_DBG("sending socket is %.*s \n",
-		dialog->send_sock->name.len,dialog->send_sock->name.s);
+	LM_DBG("sending socket is %.*s %u\n",
+		dialog->send_sock->name.len,dialog->send_sock->name.s, dialog->send_sock);
 
 
 	/* ***** Create TRANSACTION and all related  ***** */
