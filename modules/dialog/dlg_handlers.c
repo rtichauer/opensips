@@ -233,7 +233,8 @@ static int init_leg_info( struct dlg_cell *dlg, struct sip_msg *msg,
 		rr_set.len, ZSW(rr_set.s), contact.len, ZSW(contact.s),
 		cseq.len, cseq.s,
 		msg->rcv.bind_address->sock_str.len,
-		msg->rcv.bind_address->sock_str.s);
+		msg->rcv.bind_address->sock_str.s
+    );
 
 	if (dlg_add_leg_info( dlg, tag, &rr_set, &contact, &cseq,
 	msg->rcv.bind_address,mangled_from,mangled_to)!=0) {
