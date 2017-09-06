@@ -345,16 +345,10 @@ int dlg_update_leg_info(struct dlg_leg *leg, struct dlg_cell *dlg, str *tag, str
         }
         leg->contact.len = contact->len;
         memcpy(leg->contact.s, contact->s, contact->len);
-        /* rr */
-//        if (rr->len) {
-//            leg->route_set.s = leg->contact.s + contact->len;
-//            leg->route_set.len = rr->len;
-//            memcpy(leg->route_set.s, rr->s, rr->len);
-//        }
     }
 
     /* socket */
-    leg->bind_addr = sock;
+//    leg->bind_addr = sock;
 
     return 0;
 }
