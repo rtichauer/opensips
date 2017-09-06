@@ -350,7 +350,7 @@ int dlg_update_leg_info(struct dlg_leg *leg, struct dlg_cell *dlg, str *tag, str
             leg->route_set.s = leg->contact.s + contact->len;
             leg->route_set.len = rr->len;
             memcpy(leg->route_set.s, rr->s, rr->len);
-            LM_ERR("Royee route_set=%.*s\n", leg->route_set.s, leg->route_set.len);
+            LM_ERR("Royee route_set=%.*s\n", leg->route_set.len, leg->route_set.s);
             if (parse_rr_body(leg->route_set.s, leg->route_set.len, &head) != 0) {
                 LM_ERR("failed parsing route set\n");
                 shm_free(leg->contact.s);
@@ -360,7 +360,7 @@ int dlg_update_leg_info(struct dlg_leg *leg, struct dlg_cell *dlg, str *tag, str
             leg->nr_uris = 0;
             while (rrp) {
                 leg->route_uris[leg->nr_uris++] = rrp->nameaddr.uri;
-                LM_ERR("Royee rrp->nameaddr.uri.s=%.*s\n", rrp->nameaddr.uri.s, rrp->nameaddr.uri.len);
+                LM_ERR("Royee rrp->nameaddr.uri.s=%.*s\n", rrp->nameaddr.uri.len, rrp->nameaddr.uri.s);
                 rrp = rrp->next;
             }
             free_rr(&head);
