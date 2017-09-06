@@ -1001,14 +1001,17 @@ static inline void log_bogus_dst_leg(struct dlg_cell *dlg)
 			dlg_leg_print_info( dlg, callee_idx(dlg), tag),dlg->legs_no[DLG_LEGS_USED]);
 }
 
-void update_dialog_route (struct sip_msg* req, struct dlg_cell *dlg, unsigned int * src_leg) {
-	struct dlg_leg * leg = &dlg->legs[*src_leg];
+void update_dialog_route (struct sip_msg* req, struct dlg_cell *dlg, unsigned int src_leg) {
+	struct dlg_leg * leg = &dlg->legs[src_leg];
 	int is_req = (req->first_line.type==SIP_REQUEST)?1:0;
 	unsigned int skip_recs = 0;
 	str contact;
 	str rr_set;
 	get_routing_info(req, is_req, &skip_recs, &contact, &rr_set);
-	dlg_update_leg_contact(leg, &rr_set, &contact);
+	if (contact.len != leg->contact.len || strncmp(contact.s,leg->contact.s,leg->contact.len) != 0) {
+		LM_DBG("Leg has a new IP, updating contact. Old contact=%.*s, new contact=%.*s\n", leg->contact.len, leg->contact.s, contact.len, contact.s);
+		dlg_update_leg_contact(leg, &rr_set, &contact);
+	}
 }
 
 void dlg_onroute(struct sip_msg* req, str *route_params, void *param)

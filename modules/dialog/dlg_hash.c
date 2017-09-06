@@ -372,7 +372,6 @@ int dlg_add_leg_info(struct dlg_cell *dlg, str* tag, str *rr,
 		str *mangled_from,str *mangled_to)
 {
 	struct dlg_leg* leg,*new_legs;
-	rr_t *head = NULL, *rrp;
 
 	if ( (dlg->legs_no[DLG_LEGS_ALLOCED]-dlg->legs_no[DLG_LEGS_USED])==0) {
 		new_legs = (struct dlg_leg*)shm_realloc(dlg->legs,
