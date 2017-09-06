@@ -1001,39 +1001,15 @@ static inline void log_bogus_dst_leg(struct dlg_cell *dlg)
 			dlg_leg_print_info( dlg, callee_idx(dlg), tag),dlg->legs_no[DLG_LEGS_USED]);
 }
 
-void update_dialog_route (struct sip_msg* req, struct dlg_cell *dlg, str *callid,
-						  str *ftag, str *ttag, unsigned int dir) {
-	unsigned int i;
-	struct dlg_leg * leg;
-
-	if (dir == DLG_DIR_DOWNSTREAM) {
-		// message is from caller
-		leg = &(dlg->legs[DLG_CALLER_LEG]);
-	} else {
-		/* check the dialog to tag - interate through all the stored to-tags */
-		if (dlg->legs_no[DLG_LEGS_USED] > DLG_FIRST_CALLEE_LEG) {
-			for (i = DLG_FIRST_CALLEE_LEG; i < dlg->legs_no[DLG_LEGS_USED]; i++) {
-				if (dlg->legs[i].tag.len == ftag->len &&
-					strncmp(dlg->legs[i].tag.s, ftag->s, ftag->len) == 0) {
-					leg = &(dlg->legs[i]);
-					break;
-				}
-			}
-		}
-	}
-	if (!leg){
-		return;
-	}
+void update_dialog_route (struct sip_msg* req, struct dlg_cell *dlg, unsigned int * src_leg) {
+	struct dlg_leg * leg = &dlg->legs[*src_leg];
 	int is_req = (req->first_line.type==SIP_REQUEST)?1:0;
 	unsigned int skip_recs = 0;
 	str contact;
 	str rr_set;
 	get_routing_info(req, is_req, &skip_recs, &contact, &rr_set);
-	dlg_update_leg_info(leg, dlg, ftag, &rr_set, &contact, &(req->cseq->body), req->rcv.bind_address, NULL, NULL);
+	dlg_update_leg_contact(leg, &rr_set, &contact);
 }
-
-
-
 
 void dlg_onroute(struct sip_msg* req, str *route_params, void *param)
 {
@@ -1102,7 +1078,7 @@ void dlg_onroute(struct sip_msg* req, str *route_params, void *param)
 					unref_dlg(dlg, 1);
 					return;
 				}
-				if (match_dialog(dlg, &callid, &ftag, &ttag, &dir, &dst_leg) == 0) {
+				if (match_dialog(dlg, &callid, &ftag, &ttag, &dir, &dst_leg, &src_leg) == 0) {
 					if (!accept_replicated_dlg) {
 						/* not an error when accepting replicating dialogs -
 						   we might have generated a different h_id when
@@ -1141,7 +1117,7 @@ void dlg_onroute(struct sip_msg* req, str *route_params, void *param)
 			return;
 		/* TODO - try to use the RR dir detection to speed up here the
 		 * search -bogdan */
-		dlg = get_dlg(&callid, &ftag, &ttag, &dir, &dst_leg);
+		dlg = get_dlg(&callid, &ftag, &ttag, &dir, &dst_leg, &src_leg);
 		if (!dlg){
 			LM_DBG("Callid '%.*s' not found\n",
 				req->callid->body.len, req->callid->body.s);
@@ -1149,28 +1125,7 @@ void dlg_onroute(struct sip_msg* req, str *route_params, void *param)
 		}
 	}
 
-
-	LM_WARN("Royee tight matching failed for %.*s with "
-					"callid='%.*s'/%d,"
-					" ftag='%.*s'/%d, ttag='%.*s'/%d and direction=%d\n",
-			req->first_line.u.request.method.len,
-			req->first_line.u.request.method.s,
-			callid.len, callid.s, callid.len,
-			ftag.len, ftag.s, ftag.len,
-			ttag.len, ttag.s, ttag.len, dir);
-	LM_WARN("Royee dialog identification elements are "
-					"callid='%.*s'/%d, "
-					"caller tag='%.*s'/%d, callee tag='%.*s'/%d\n",
-			dlg->callid.len, dlg->callid.s, dlg->callid.len,
-			dlg->legs[DLG_CALLER_LEG].tag.len,
-			dlg->legs[DLG_CALLER_LEG].tag.s,
-			dlg->legs[DLG_CALLER_LEG].tag.len,
-			dlg->legs[callee_idx(dlg)].tag.len,
-			ZSW(dlg->legs[callee_idx(dlg)].tag.s),
-			dlg->legs[callee_idx(dlg)].tag.len);
-
-
-	update_dialog_route(req, dlg, &callid, &ftag, &ttag, dir);
+	update_dialog_route(req, dlg, src_leg);
 	/* run state machine */
 	switch ( req->first_line.u.request.method_value ) {
 		case METHOD_PRACK:
