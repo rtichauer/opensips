@@ -1003,38 +1003,33 @@ static inline void log_bogus_dst_leg(struct dlg_cell *dlg)
 
 void update_dialog_route (struct sip_msg* req, struct dlg_cell *dlg, str *callid,
 						  str *ftag, str *ttag, unsigned int dir) {
-	LM_ERR("Royee 0\n");
 	unsigned int i;
-	struct dlg_leg leg;
+	struct dlg_leg * leg;
 
 	if (dir == DLG_DIR_DOWNSTREAM) {
 		// message is from caller
-		LM_DBG("Royee 2\n");
-		leg = dlg->legs[DLG_CALLER_LEG];
-
+		leg = &(dlg->legs[DLG_CALLER_LEG]);
 	} else {
-		LM_DBG("Royee 3\n");
 		/* check the dialog to tag - interate through all the stored to-tags */
 		if (dlg->legs_no[DLG_LEGS_USED] > DLG_FIRST_CALLEE_LEG) {
 			for (i = DLG_FIRST_CALLEE_LEG; i < dlg->legs_no[DLG_LEGS_USED]; i++) {
 				if (dlg->legs[i].tag.len == ftag->len &&
 					strncmp(dlg->legs[i].tag.s, ftag->s, ftag->len) == 0) {
-					leg = dlg->legs[i];
-					LM_DBG("Royee 4\n");
+					leg = &(dlg->legs[i]);
 					break;
 				}
 			}
 		}
 	}
-
-	LM_DBG("Royee 1 leg.contact=%.*s\n", leg.contact.len, leg.contact.s);
-
+	if (!leg){
+		return;
+	}
 	int is_req = (req->first_line.type==SIP_REQUEST)?1:0;
 	unsigned int skip_recs = 0;
 	str contact;
 	str rr_set;
 	get_routing_info(req, is_req, &skip_recs, &contact, &rr_set);
-	dlg_update_leg_info(&leg, dlg, ftag, &rr_set, &contact, &(req->cseq->body), req->rcv.bind_address, NULL, NULL);
+	dlg_update_leg_info(leg, dlg, ftag, &rr_set, &contact, &(req->cseq->body), req->rcv.bind_address, NULL, NULL);
 }
 
 
