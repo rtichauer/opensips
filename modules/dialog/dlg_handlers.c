@@ -1008,7 +1008,7 @@ void update_dialog_route (struct sip_msg* req, struct dlg_cell *dlg, unsigned in
 	str contact;
 	str rr_set;
 	get_routing_info(req, is_req, &skip_recs, &contact, &rr_set);
-	if (contact.len != leg->contact.len || strncmp(contact.s,leg->contact.s,leg->contact.len) != 0) {
+	if ( contact.len != 0 && (contact.len != leg->contact.len || strncmp(contact.s,leg->contact.s,leg->contact.len)) != 0) {
 		LM_DBG("Leg has a new IP, updating contact. Old contact=%.*s, new contact=%.*s\n", leg->contact.len, leg->contact.s, contact.len, contact.s);
 		dlg_update_leg_contact(leg, &rr_set, &contact);
 	}
