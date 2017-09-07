@@ -1001,6 +1001,9 @@ static inline void log_bogus_dst_leg(struct dlg_cell *dlg)
 }
 
 void update_dialog_route (struct sip_msg* req, struct dlg_cell *dlg, unsigned int src_leg) {
+    if (src_leg < 0){
+        return;
+    }
 	struct dlg_leg * leg = &dlg->legs[src_leg];
 	int is_req = (req->first_line.type==SIP_REQUEST)?1:0;
 	unsigned int skip_recs = 0;
